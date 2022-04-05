@@ -1,0 +1,228 @@
+---
+title: "Family Planning Trends in Egypt from 1998 to 1997"
+subtitle: "1997 Egypt Interim Demographic and Health Survey"
+author:
+  - "William Gerecke"
+thanks: "Code can be found at https://github.com/wlgfour/birth_control_egypt.git"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+abstract: "This report extracts and cleans a table that shows statistics about the use of birth control by women in Egypt. The table is extracted from the Egyprian DHS of 1997, and contains data from 1988, 1992, 1995, and 1997. I found that the use of birth control was increasing, and that it appeared to be used as a method to prevent the growth of families rather than postpone the begginning of families. It is important to understand the use and social opinion of birth control in order to monitor intentional or accidental implementations of eugenics. It is also important to ensure that contraceptive measures are available to everyone who wants or needs them."
+bibliography: references.bib
+output:
+  bookdown::pdf_document2: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(janitor)
+library(knitr)
+library(kableExtra)
+```
+
+```{r, echo=FALSE}
+# function to make a chart from the long format data file saved to outputs/long
+mkchart <- function(filename, bgchars='', legend_order=NA) {
+  data <- read.csv(filename) |>
+  clean_names() |>
+  mutate(percentage = as.numeric(percentage))
+
+  chart <- data |>
+    ggplot(aes(x = year, y = percentage, color=background_characteristics)) +
+    geom_line() +
+    facet_wrap('method') +
+    labs(
+      x = 'Year',
+      y = 'Percentage',
+      color = bgchars
+    ) +
+    theme_classic() +
+    scale_x_continuous(labels=function(x) sprintf("%.0f", x))
+  if (!missing(legend_order)) {
+    chart <- chart +
+      scale_color_discrete(breaks=legend_order)
+  }
+  
+  chart
+}
+#mkchart('outputs/long/urban_rural.csv')
+```
+
+```{r, echo=FALSE}
+# function to make tables from the wide format files that have been saved to outputs
+mktable <- function (filename, bgchars='') {
+  data <- read.csv(filename) |>
+  clean_names() |>
+  select(
+    c("background_characteristics",
+      'any_method_1988', 'pill_1988', 'iud_1988', 'injectables_1988',
+      'any_method_1992', 'pill_1992', 'iud_1992', 'injectables_1992',
+      'any_method_1995', 'pill_1995', 'iud_1995', 'injectables_1995',
+      'any_method_1997', 'pill_1997', 'iud_1997', 'injectables_1997'
+      )
+  )
+
+  colnames = c(
+    bgchars,
+    'Any Method', 'Pill', 'IUD', 'Injectables',
+    'Any Method', 'Pill', 'IUD', 'Injectables',
+    'Any Method', 'Pill', 'IUD', 'Injectables',
+    'Any Method', 'Pill', 'IUD', 'Injectables'
+    )
+  colgroups = c(' '=1, '1988'=4, '1992'=4, '1995'=4, '1997'=4)
+  
+  data |>
+    kable(
+      booktabs = T,
+      align = c('l', rep('r', 16)),
+      col.names = colnames
+      ) |>
+    kable_styling(font_size = 8) |>
+    row_spec(0, font_size = 6) |>
+    add_header_above(colgroups, font_size = 10) |>
+    landscape()
+}
+
+# Example of using the function
+#mktable('outputs/wide/age.csv', bgchars='Age')
+```
+
+
+
+# Introduction
+
+Birth control has become a widely-used method for family planning in many parts of the world. The concept, however, has been met with resistance and there were political movements for its adoption as early as 1915. Beyond religious resistance, the movement was hijacked by the population control movement and the eugenics movement as a way to control populations. Even now, it is important to ensure that education about and distribution of contraceptives is equally available between populations, so as to prevent any form of implicit population control.
+
+In this paper, I find two things. The first is that Egpyt appears to have been in the process of adopting birth control, especially in rural areas during the time period represented by the data. The second finding is that women appear to be using birth control to prevent the growth of their family rather than as a method to postpone starting a family.
+
+In this paper, I discuss the extraction and cleaning of data gathered by the 1997 DHS survey conducted in Egypt. This specific iteration of the DHS in Egypt focused on looking at family planning and child mortality, and includes data from three prior iterations of the same survey. I then discuss the patterns that can be seen in the data and their implications. Finally, I discuss ethical concerns round birth control, focusing on how movements such as eugenics can use it. I also discuss the additional option for male birth control, and how it could reduce the burden of family planning on women.
+
+
+# Data
+## Source
+The 1997 Egypt Interim Demographic and Health Survey (EIDHS-97) was conducted by @egypt1998 in order to gather population and health data. The publication covers a wide variety of topics including family planning and child health. The data that is discussed in this report is obtained from table 3.5 in the document which lists trends in the current use of family planning methods bu social and demographic characteristics.
+
+The report used data that was obtained by sending trained surveyors throughout Egypt. The EIDHS-97 chose a systematic random sample of 6000 households that included all areas except Souhag. The EIDHS-97 drew from the same listing of addresses that was prepared for the EIDHS-95.
+
+The report also shows data from past iterations of the DHS in Egypt. The specific years that the data were gathered are 1988, 1992, 1995, and the year that the survey was conducted for this iteration of the DHS, 1997. It is important to note that the surveys were not conducted with uniform times in between iterations. The difference in number of years between the consecutive surveys is 4, 3, and 2 indicating that they were conducted with an increasing frequency. As such, it is important to remember that changed between the more recent surveys correspond to a shorter time interval than the between earlier surveys.
+
+## Software
+During the process of gathering and cleaning the data, R [@r], and several packages were used. This software was also used to were this report. `pdftools` and `stringr` were used to extract the table from the published pdf document[@pdftools,@stringr]. `tidyverse`, `tidyr`, `dplyr`, and `janitor` were used to process and clean the data [@tidyverse,@tidyr,@dplyr,@janitor]. The functions defined by `dplyr` that are used to mutate dataframes were particularly useful when working with this data.
+
+The software used for this project includes a script that can be used to gather and clean the data, as well as an RMarkdown file that is used to generate the final report. The RMarkdown file relies on a separate file for references, as well as the processed data from the EIDHS-97, which can be found in the `outputs` directory of the project.
+
+This project also uses the R project structure so that it is completely reproducible. In order to reproduce this project, someone only needs to clone the repository from GitHub [@git] and open the R project.
+
+## Cleaning
+The data discussed int his report is in the form of a table on page 22 of the EIDHS-97 report. Since the report is a pdf, I used `pdftools` to extract the text that was on that page of the table. There were several challenges associated with gathering data from the pdf file. The first is that the pdf was likely generated using OCR on a hard copy of the document because the characters shown in the document are not always those represented by the text encoding. The second challenge was that the table was only available as a dataframe where each row corresponded to a line of text. In addition to this encoding of the table, there were also extra lines of text in the raw dataframe.
+
+The most common characters that are misrepresented are "." and ".4". "." is commonly misrepresented as "," or "~", while when ".4" is misrepresented, it always appears as an "A". In order to fix the misrepresented characters, before performing any other operations, I used a function to replace all occurrences of the misrepresented characters with the correct characters. I manually inspected the resulting data to ensure that no characters had been replaced with incorrect characters.
+
+In order to extract the correct lines from the pdf, only the ones containing the table, I manually inspected the dataframe and hard-coded the lines that the table started and ended on. It is important to note that if someone wanted to apply the same processing technique to another table or document, they would need to repeat this step and manually hard-code the beginning and end lines of the table.
+
+In order to parse the table into a dataframe, I manually inspected the text encoding of the table to look for patterns that indicated a cell delimiter. In the text encoding for this table, cell delimiters were represented as one or more spaces. Splitting rows using groups of spaces would have created extra columns in the resulting table because the first column, the row labels, contained leading spaces and spaces between words. In order to prevent these cell values from causing problems, I replaced patterns that matched a regex for leading spaces (`^[ ]+`) with a ".". I replaced spaces between words, matched using the regex `([a-zA-Z]) ([a-zA-Z])` with the regex `\\1.\\2` so that only the space was replaced and all letters in the words were preserved.
+
+After cleaning the column names, I was able to split each row into the correct number of columns by splitting on the regex expression `[ ]+`. This, however, generated many problematic values in the resulting dataframe since there were empty rows in the dataframe representing the table in order to indicate whitespace in the table. After performing the splitting operations, these rows contained `NA` values, and in order to get rid of them, I dropped all rows containing `NA` values. I manually inspected the resulting dataframe in order to verify that none of the rows containing data were dropped.
+
+At this point, the data had been cleaned and stored in a wide-format dataframe. The problem was that the table actually represented several sub-tables. For example, there is a section of the table that breaks down birth control usage by age, and a different section that looks at birth control usage by residence. In order to make the data more useful, I broke the table into sub-tables by manually subsetting by row number. The subsets are age, education, living children, residence, and urban/rural.
+
+Finally, there are many scenarios where data is more useful in long format. As such, I exported the subsets in wide format and long format, where the long format data has columns for "Background Characteristics," method, year, and percentage. The long format data is used to generate the plots in this report, while the wide format data is used to generate the tables.
+
+The data can be seen in tabular form in appendix section \@ref(appendix-a).
+
+
+# Results
+## Education
+
+```{r educhart, echo=F, fig.align='center', fig.width=5, fig.height=2.5, fig.cap='Percentage of women who use birth control by method and education for each year the survery was conducted.'}
+mkchart('outputs/long/education.csv', bgchars='Education', legend_order=c('Higher', 'Some Secondary', 'Some Primary', 'No Education'))
+
+higher_education <- read.csv('outputs/long/education.csv') |>
+  filter(Background.Characteristics=='Higher', Method=='Any Method')
+
+no_education <- read.csv('outputs/long/education.csv') |>
+  filter(Background.Characteristics=='No Education', Method=='Any Method')
+
+h_change <- higher_education[(higher_education$Year == 1997),'percentage'] - higher_education[(higher_education$Year == 1988),'percentage']
+
+n_change <- no_education[(no_education$Year == 1997),'percentage'] - no_education[(no_education$Year == 1988),'percentage']
+```
+
+In figure \@ref(fig:educhart) we can see that women with higher levels of education in general use birth control more. Looking at the breakdown by method, we can see that this trend is driven by usage of the IUD, and that usage of injectables and the pill is less common among women with higher levels of education.
+
+We can also see that there is a strong upward trend in the usage of birth control between 1988 and 1997. Specifically, the percentage of women with higher education who use any method of birth control increases by `r h_change`% and `r n_change`% for women with no education.
+
+
+## Age
+
+```{r agechart, echo=F, warning=FALSE, fig.align='center', fig.width=5, fig.height=2.5, fig.cap='Percentage of women who use birth control by method and age for each year the survery was conducted.'}
+mkchart('outputs/long/age.csv', bgchars='Age')
+```
+
+In figure \@ref(fig:agechart), we can see the trends in birth control usage by age. As with education, me can see a general upward trend int he usage of contraceptives by women between the years 1988 and 1997. Again, we can also see a decrease in the usage of the pill, and very little usage of injectables with IUD being the primary form of contraceptive.
+
+Looking at the trends between age groups, we can see a trend that indicates that as women age, they become more likely to use contraceptive. This continues until they are 25-30 and then  where it appears that everyone who will use contraceptives has already adopted their use. The outlier to this trend is women 45-49 who have one of the lowest use rates of contraceptives.
+
+Interestingly, there is no decrease in the usage of contraceptives from one age group to the next until the 45-59 group. This indicates that women who stop birth control to start a family either never use birth control or resume using birth control after having their child.
+
+## Living Children
+
+```{r chichart, echo=F, fig.align='center', fig.width=5, fig.height=2.5, fig.cap='Percentage of women who use birth control by method and number of living children for each year the survery was conducted.'}
+mkchart('outputs/long/living_children.csv', bgchars='Living Children')
+```
+
+In Figure \@ref(fig:chichart), we can see the same overall trend as the previous two sections where usage of birth control generally increases between 1998 and 1997. We can see, however, a steeper trend in the increase in usage of IUDs. We can also see higher usage of the pill in some groups, specifically women with more living children.
+
+One thing that sticks out in this breakdown of the data is that women with 0 living children seem to not use any form of birth control, and in fact less than 1% of the category uses any form of contraceptive. This is strange because it indicates that women only adopt the use of contraceptive measures once they have already had children. That is, rather than using contraceptives as a method to postpone having a family, they use it as a method of preventing the growth of their family once they've had the amount of children that they want.
+
+This is also strange because it indicates that many women aged between 15-19 have already had at least one child. That is, the data indicate that 20% of women aged 15-19 use some form of birth control, but only 0.1% of women who use birth control don't have a child. Assuming that the number of women surveyed from this age group is not significantly smaller than the number of women surveyed in each other age group, this indicates that between 3% and 20% of women aged 15-19 have at least one child.
+
+## Residence
+
+The table presented by @egypt1998 includes two different breakdowns of contraceptive use by location of residence. The first divides respondents into urban or rural locations, while the second divides the locations into "Urban Governates", "Lower Egypt", and "Upper Egypt". In figure \@ref(fig:reschart) we can see the prior breakdown, but the data for the latter breakdown can bee seen in section \@ref(appendix-a).
+
+```{r reschart, echo=F, fig.align='center', fig.width=5, fig.height=2.5, fig.cap='Percentage of women who use birth control by method and whether the respondant lives in an urban or rural location for each year the survery was conducted.'}
+mkchart('outputs/long/urban_rural.csv', bgchars='Location')
+```
+
+In figure\@ref(fig:reschart), we can see that contraceptives are significantly more common in urban areas than they are in rural areas. We can, however, see that the use of contraceptives in rural areas increased by about 30% between 1988 and 1997 while it only increased by about 10% in urban areas during the same time frame. This could indicate that urban areas started using contraceptives more, and it took more time for the social change to be adopted by the rural areas.
+
+# Discussion
+## Ethical concerns
+
+Historically, birth control has met resistance when it comes to wide-spread adoption. As early as 1915, Margaret Sanger led the birth control movement which sought to educate women about birth control [@eugenics]. Adoption of birth control, however met resistance as the movement became synonymous with eugenics and population control [@bchist]. In reality, these were several different movements with significantly different goals. While the birth control movement sought to educate women, the population control movement wanted to use birth control to limit the growth of the global population, and the eugenics movement sought to use birth control to limit the growth of specific deviant communities.
+
+As birth control has a complicated history and its use by women is intertwined with other morally questionable or reprehensible movements, it is important to ensure that birth control is being used in the right way. One way that this can be done is by monitoring use in specific areas to ensure that birth control is not being used for eugenics. 
+
+Figure \@ref(fig:rreschart) shows the usage of birth control by specific location of residence in Egypt. Initially, we can see that the difference between upper and lower Egypt is significant. While this is cause for concern, there are also many social and religious factors that are at play when to comes to the adoption of birth control. As such, these differences could be due to social differences rather than targeted education or distribution of contraceptive measures.
+
+```{r rreschart, echo=F, fig.align='center', fig.width=5, fig.height=2.5, fig.cap='Percentage of women who use birth control by method and where the respondant lives for each year the survery was conducted.'}
+mkchart('outputs/long/residence.csv', bgchars='Location')
+```
+
+
+## Birth control for men
+
+Societally, the burden of using contraceptives lies on women. There are, however, often serious side effects of using many contraceptives [@bcsideaffects]. In order to make the process of using birth control more equitable, researchers have been developing a male birth control that men can take [@mbc1, @mbc2].
+
+In addition to taking the burden off of women in a relationship, male birth control allows men to exercise family planning. Historically, the idea of male birth control was met with resistance [@mbc1]. More recent research has showed that the public opinion of male birth control has become more positive and would be widely accepted as an alternative to family planning [@mb2012].
+
+
+\clearpage
+# References
+
+<div id="refs"></div>
+
+
+\newpage
+# Appendix A
+
+```{r, echo=FALSE}
+mktable('outputs/wide/age.csv', bgchars='Age')
+mktable('outputs/wide/education.csv', bgchars='Age')
+mktable('outputs/wide/living_children.csv', bgchars='Age')
+mktable('outputs/wide/residence.csv', bgchars='Age')
+mktable('outputs/wide/urban_rural.csv', bgchars='Age')
+```
+
